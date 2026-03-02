@@ -1,4 +1,3 @@
-
 # Fault Detection (IEEE ML Challenge)
 
 ## Problem
