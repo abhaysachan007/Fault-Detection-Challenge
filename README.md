@@ -5,22 +5,18 @@ Binary classification using 47 numerical features (F01–F47) to predict device 
 - 0 = Normal
 - 1 = Faulty
 
-## Approach (High Level)
-- Cleaned training labels (removed missing Class rows).
-- Applied log transform to highly skewed features (based on skewness threshold).
-- Used RobustScaler to reduce outlier impact.
-- Trained an ensemble of XGBoost, LightGBM, and CatBoost.
-- Final prediction is a weighted average of model probabilities, thresholded at 0.5.
+   Approach
+We implemented a *2-Stage Stacked Generalization* architecture to maximize F1-Score:
 
-## Repository Contents
-- `Fault_Detection_System.ipynb` (Colab notebook)
-- `requirements.txt`
-- (optional) `FINAL_SUBMISSION.csv`
+1.  Data Preprocessing:
+    *   Handled missing target values.
+    *   Applied "Log Transformation (`np.log1p`)" to highly skewed features (skewness > 10.0) to normalize outliers in sensor data.
+    *   Used "RobustScaler" to minimize the impact of remaining outliers.
 
-## Setup
-### Option A: Google Colab (recommended)
-1. Open the notebook in Colab.
-2. Upload `TRAIN.csv` and `TEST.csv` to the Colab file panel.
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
+2.  Model Architecture:
+    *   Level 1 (Base Learners): An ensemble of *XGBoost*, *LightGBM*, and *CatBoost* trained with Stratified K-Fold CV (k=5).
+    *   Level 2 (Meta-Learner): A "Logistic Regression" model was trained on the Out-of-Fold (OOF) predictions to learn the optimal combination weights dynamically.
+
+3.  Threshold Optimization:
+    *   Instead of a default 0.5 threshold, we optimized the classification threshold based on the Cross-Validation F1-Score to handle class imbalance effectively.
+  
