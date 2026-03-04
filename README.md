@@ -1,21 +1,37 @@
-# Fault Detection (IEEE ML Challenge)
+# Fault Detection – IEEE ML Challenge
 
-## Problem
+## Overview
 Binary classification using 47 numerical features (F01–F47) to predict device status:
-- 0 = Normal
-- 1 = Faulty
+- `0` = Normal
+- `1` = Faulty
 
-## Approach
-We implemented a **2-Stage Stacked Generalization** architecture to maximize F1-Score:
+The required submission file is `FINAL.csv` with two columns: `ID`, `CLASS`, in the same order as `TEST.csv`.
 
-1.  **Data Preprocessing:**
-    *   Handled missing target values.
-    *   Applied **Log Transformation (`np.log1p`)** to highly skewed features (skewness > 10.0) to normalize outliers in sensor data.
-    *   Used **RobustScaler** to minimize the impact of remaining outliers.
+## Method
+This solution uses a **2-stage stacked ensemble** optimized for **F1-score**.
 
-2.  **Model Architecture:**
-    *   **Level 1 (Base Learners):** An ensemble of **XGBoost**, **LightGBM**, and **CatBoost** trained with Stratified K-Fold CV (k=5).
-    *   **Level 2 (Meta-Learner):** A **Logistic Regression** model was trained on the Out-of-Fold (OOF) predictions to learn the optimal combination weights dynamically.
+### Step 1: Data preparation
+- Rows with missing target labels (`Class`) are removed.
+- The target column is cast to integer (`0/1`).
 
-3.  **Threshold Optimization:**
-    *   Instead of a default 0.5 threshold, we optimized the classification threshold based on the Cross-Validation F1-Score to handle class imbalance effectively.
+### Step 2: Model training (Stacking)
+- **Stratified K-Fold Cross-Validation (k=5)** is used to preserve class balance in each fold.
+- **Level-1 (base models):**
+  - XGBoost
+  - LightGBM
+  - CatBoost
+- Each base model produces **out-of-fold (OOF) probabilities** for the training set and averaged probabilities for the test set.
+- **Level-2 (meta model):**
+  - Logistic Regression is trained on the OOF probabilities from the three base models to learn the best combination.
+
+### Step 3: F1-driven threshold selection
+- Instead of using a fixed threshold of `0.5`, the decision threshold is selected by scanning values in `[0.1, 0.9]` and choosing the threshold that maximizes **F1-score** on OOF predictions.
+
+### Class imbalance handling
+- A positive-class weight is computed from the training labels and used in the base models to reduce bias toward the majority class.
+
+## How to run (Google Colab)
+1. Upload `TRAIN.csv` and `TEST.csv` to the Colab session.
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
